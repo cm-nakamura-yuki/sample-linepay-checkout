@@ -5,7 +5,7 @@
     "handler": "index.handler",
     "memory": 128,
     "timeout": 5,
-    "role": "arn:aws:iam::xxxxxxxxx:role/Checkout_lambda_function",
+    "role": "arn:aws:iam::645332194441:role/Checkout_lambda_function",
     "environment": {},
     "nameTemplate": "{{.Project.Name}}{{.Function.Name}}"
   }

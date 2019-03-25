@@ -1,0 +1,152 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Sample LINE Pay checkout API."
+Parameters:
+  TableName:
+    Type: String
+    Description: "Data Store Table."
+  APIName:
+    Type: String
+    Description: "API Name."
+  PutFunctionArn:
+    Type: String
+    Description: "Lambda Function Arn - Get/Put."
+  GetFunctionArn:
+    Type: String
+    Description: "Lambda Function Arn - Get/Put."
+  ListFunctionArn:
+    Type: String
+    Description: "Lambda Function Arn - List."
+  ItemPath:
+    Type: String
+    Description: "API Path - Get/Put."
+  ListPath:
+    Type: String
+    Description: "API Path - List."
+Resources:
+  CheckoutProductTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${TableName}"
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - 
+          AttributeName: "productName"
+          KeyType: "HASH"
+      AttributeDefinitions:
+        -
+          AttributeName: "productName"
+          AttributeType: "S"
+  PutPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Sub "${PutFunctionArn}"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+  GetPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Sub "${GetFunctionArn}"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+  ListPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Sub "${ListFunctionArn}"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+  CheckoutRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub "${APIName}"
+  GetPutResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ParentId:
+        Fn::GetAtt:
+          - "CheckoutRestApi"
+          - "RootResourceId"
+      PathPart: !Sub "${ItemPath}"
+  ListResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ParentId:
+        Fn::GetAtt:
+          - "CheckoutRestApi"
+          - "RootResourceId"
+      PathPart: !Sub "${ListPath}"
+  PutMethod:
+    DependsOn: "PutPermission"
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ResourceId:
+        Ref: "GetPutResource"
+      HttpMethod: "POST"
+      AuthorizationType: "None"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PutFunctionArn}/invocations"
+      MethodResponses:
+        -
+          ResponseModels:
+            application/json: Empty
+          StatusCode: 200
+  GetMethod:
+    DependsOn: "GetPermission"
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ResourceId:
+        Ref: "GetPutResource"
+      HttpMethod: "GET"
+      AuthorizationType: "None"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetFunctionArn}/invocations"
+      MethodResponses:
+        -
+          ResponseModels:
+            application/json: Empty
+          StatusCode: 200
+  ListMethod:
+    DependsOn: "ListPermission"
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ResourceId:
+        Ref: "ListResource"
+      HttpMethod: "GET"
+      AuthorizationType: "None"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListFunctionArn}/invocations"
+      MethodResponses:
+        -
+          ResponseModels:
+            application/json: Empty
+          StatusCode: 200
+  CheckoutDeployment:
+    DependsOn: "ListMethod"
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+  CheckoutStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: prd
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      DeploymentId:
+        Ref: "CheckoutDeployment"
