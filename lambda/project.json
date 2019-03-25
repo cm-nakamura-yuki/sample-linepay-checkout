@@ -1,0 +1,11 @@
+{
+    "name": "Checkout",
+    "description": "",
+    "runtime": "nodejs8.10",
+    "handler": "index.handler",
+    "memory": 128,
+    "timeout": 5,
+    "role": "arn:aws:iam::645332194441:role/Checkout_lambda_function",
+    "environment": {},
+    "nameTemplate": "{{.Project.Name}}{{.Function.Name}}"
+  }

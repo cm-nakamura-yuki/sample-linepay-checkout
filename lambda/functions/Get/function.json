@@ -1,0 +1,6 @@
+{
+    "description": "LINE Pay Checkout - Get.",
+    "environment": {
+        "TABLE_NAME": "product"
+    }
+}
