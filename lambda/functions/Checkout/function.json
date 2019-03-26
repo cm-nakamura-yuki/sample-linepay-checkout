@@ -1,0 +1,11 @@
+{
+    "description": "LINE Pay Checkout - Checkout.",
+    "environment": {
+        "TABLE_NAME": "product",
+        "LINEPAY_ENDPOINT": "https://sandbox-api-pay.line.me/v2/payments/request",
+        "CALLBACK_ENDPOINT": "https://classmethod.jp",
+        "GETITEM_ENDPOINT": "https://xxxxxx.execute-api.ap-northeast-1.amazonaws.com/prd/item",
+        "CHANNEL_ID": "xxxxxxxxx",
+        "CHANNEL_SECRET": "xxxxxxxxxx"
+    }
+}
