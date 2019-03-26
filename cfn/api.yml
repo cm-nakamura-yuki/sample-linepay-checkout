@@ -17,12 +17,18 @@ Parameters:
   ListFunctionArn:
     Type: String
     Description: "Lambda Function Arn - List."
+  CheckoutFunctionArn:
+    Type: String
+    Description: "Lambda Function Arn - Checkout."
   ItemPath:
     Type: String
     Description: "API Path - Get/Put."
   ListPath:
     Type: String
     Description: "API Path - List."
+  CheckoutPath:
+    Type: String
+    Description: "API Path - Checkout."
 Resources:
   CheckoutProductTable:
     Type: AWS::DynamoDB::Table
@@ -55,6 +61,12 @@ Resources:
       FunctionName: !Sub "${ListFunctionArn}"
       Action: "lambda:InvokeFunction"
       Principal: "apigateway.amazonaws.com"
+  CheckoutPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Sub "${CheckoutFunctionArn}"
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
   CheckoutRestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -79,6 +91,16 @@ Resources:
           - "CheckoutRestApi"
           - "RootResourceId"
       PathPart: !Sub "${ListPath}"
+  CheckoutResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ParentId:
+        Fn::GetAtt:
+          - "CheckoutRestApi"
+          - "RootResourceId"
+      PathPart: !Sub "${CheckoutPath}"
   PutMethod:
     DependsOn: "PutPermission"
     Type: AWS::ApiGateway::Method
@@ -136,8 +158,27 @@ Resources:
           ResponseModels:
             application/json: Empty
           StatusCode: 200
+  CheckoutMethod:
+    DependsOn: "CheckoutPermission"
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: "CheckoutRestApi"
+      ResourceId:
+        Ref: "CheckoutResource"
+      HttpMethod: "POST"
+      AuthorizationType: "None"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckoutFunctionArn}/invocations"
+      MethodResponses:
+        -
+          ResponseModels:
+            application/json: Empty
+          StatusCode: 200
   CheckoutDeployment:
-    DependsOn: "ListMethod"
+    DependsOn: "CheckoutMethod"
     Type: AWS::ApiGateway::Deployment
     Properties:
       RestApiId:
